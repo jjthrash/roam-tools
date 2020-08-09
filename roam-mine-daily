@@ -138,13 +138,13 @@ end
 # E.g.
 # [[Journal]]
 #   [[August 1st, 2020]]
-#     ((abcdefghi))
+#     {{embed: ((abcdefghi))}}
 #   [[August 6th, 2020]]
-#     ((bcdefghij))
+#     {{embed: ((bcdefghij))}}
 def format(title, uids_by_day)
   return nil if uids_by_day.nil?
   formatted_pages = uids_by_day.map {|day, uids|
-    formatted_uids = uids.map {|uid| "    ((#{uid}))"}.join("\n")
+    formatted_uids = uids.map {|uid| "    {{embed: ((#{uid}))}}"}.join("\n")
     formatted_day = "  [[#{day}]]"
     "#{formatted_day}\n#{formatted_uids}"
   }.join("\n")
