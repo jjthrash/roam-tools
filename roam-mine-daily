@@ -154,6 +154,12 @@ def format(title, uids_by_day)
   OUTPUT
 end
 
+# Optionally return only the results matching the specified month.
+#
+# match_month - The month to match. If nil, don't filter anything.
+# results_by_month - [month, [uid]]
+#
+# Return results in the same shape as the input, potentially filtered.
 def filter_months(match_month, results_by_month)
   return results_by_month if match_month.nil?
 
