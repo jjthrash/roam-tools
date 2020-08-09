@@ -21,30 +21,56 @@ def string_matches_pattern(pattern, string)
   end
 end
 
-# Recursively (breadth-first) find the first block reference for a node
+def traverse_nodes_breadth_first(nodes, &block)
+  nodes.each do |node|
+    block.call(node)
+  end
+
+  nodes.each do |node|
+    traverse_nodes_breadth_first(node['children'] || [], &block)
+  end
+
+  nil
+end
+
+def traverse_nodes_depth_first(nodes, &block)
+  nodes.each do |node|
+    block.call(node)
+    traverse_nodes_depth_first(node['children'] || [], &block)
+  end
+
+  nil
+end
+
+# Recursively find the first block reference for a node
 # that matches the pattern.
 # pattern - can === a string
 # nodes - a list of things that have a 'uid', and maybe a 'children'
-def nested_block_reference_matching_pattern(pattern, nodes)
-  return nil if nodes.nil? || nodes.empty?
-
-  matching = nodes.find {|node|
-    string_matches_pattern(pattern, node['string'])
+def nested_block_reference_matching_pattern(pattern:, nodes:)
+  value = []
+  traverse_nodes_depth_first(nodes) {|node|
+    if string_matches_pattern(pattern, node['string'])
+      value << node["uid"]
+    end
   }
 
-  return matching['uid'] if matching
-
-  nodes.inject(nil) {|r, node|
-    r || nested_block_reference_matching_pattern(pattern, node['children'] || [])
-  }
+  value
 end
 
-# Given the pages
-def get_matching_for_pages(pattern, pages)
+# Return [uid]
+def get_matching_for_page(pattern:, page:)
+  nested_block_reference_matching_pattern(pattern: pattern, nodes: page['children'] || [])
+end
+
+# Given the pages and a pattern, return the list of uids that match the
+# pattern for each page.
+#
+# Return [[title, [uid]]
+def get_matching_for_pages(pattern:, pages:)
   pages.map {|page|
-    uid = nested_block_reference_matching_pattern(pattern, page['children'] || [])
-    uid ?
-      [ page['title'], uid ] :
+    uids = get_matching_for_page(pattern: pattern, page: page)
+    uids.any? ?
+      [ page['title'], uids ] :
       nil
   }.compact
 end
@@ -82,13 +108,21 @@ def get_stream(options)
     open(File.expand_path(options[:file]))
 end
 
+def first_only(titles_and_uids)
+  titles_and_uids.map do |title, uids|
+    [title, uids[0,1]]
+  end
+end
+
 # Return a hash of { month_name: [page] }
-def process(pattern, pages)
+def process(pattern:, pages:, include_all: false)
   day_pages = get_day_pages(pages)
   by_month = group_by_month(day_pages)
   by_month.map {|month, pages|
-    matching = get_matching_for_pages(pattern, pages)
+    matching = get_matching_for_pages(pattern: pattern, pages: pages)
     next nil if matching.empty?
+
+    matching = first_only(matching) unless include_all
 
     matching = matching.sort_by {|d, e| Date.parse(d)}
     [month, matching]
@@ -107,13 +141,12 @@ end
 #     ((abcdefghi))
 #   [[August 6th, 2020]]
 #     ((bcdefghij))
-def format(title, pages)
-  return nil if pages.nil?
-  formatted_pages = pages.map {|day, uid|
-    (<<-OUTPUT).chomp
-  [[#{day}]]
-    {{embed: ((#{uid}))}}
-    OUTPUT
+def format(title, uids_by_day)
+  return nil if uids_by_day.nil?
+  formatted_pages = uids_by_day.map {|day, uids|
+    formatted_uids = uids.map {|uid| "    ((#{uid}))"}.join("\n")
+    formatted_day = "  [[#{day}]]"
+    "#{formatted_day}\n#{formatted_uids}"
   }.join("\n")
   <<-OUTPUT
 #{title}
@@ -154,6 +187,10 @@ def parse_arguments!(argv)
     opts.on("-fF", "--file=F", "Use the given file as input. If absent, will parse STDIN") do |f|
       results[:file] = f
     end
+
+    opts.on("-a", "--include-all", "Include all the matching results, not just the first") do |a|
+      results[:include_all] = true
+    end
   end
 
   option_parser.parse!(argv)
@@ -174,7 +211,7 @@ if __FILE__ == $0
 
   stream = get_stream(options)
   pages = parse(stream)
-  results_by_month = process(options[:pattern], pages)
+  results_by_month = process(pattern: options[:pattern], include_all: options[:include_all], pages: pages)
   relevant_results = filter_months(options[:month], results_by_month)
   formatted = relevant_results.map {|month, results|
     format(options[:pattern], results)
