@@ -18,8 +18,8 @@ Spit out a `{{table}}` that contains a calendar. Specify a month, or print out t
 E.g.
 
 - `roam-month` - render the current month
-- `roam-month 2020/07 - render July, 2020
-- `roam-month 2020/07/01 - render July, 2020
+- `roam-month 2020/07` - render July, 2020
+- `roam-month 2020/07/01` - render July, 2020
 
 
 ### Roam Day Miner
