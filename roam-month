@@ -28,7 +28,7 @@ end
 # Lifted from: https://stackoverflow.com/questions/37364637/trying-to-convert-and-display-an-ordinal-number#37364719
 def ordinal_part(n)
   last_number = n % 10
-  if [11,12,13].include?(last_number)
+  if [11,12,13].include?(n)
     return "th"
   elsif last_number == 1
     return "st"
