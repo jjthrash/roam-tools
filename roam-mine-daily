@@ -141,10 +141,15 @@ end
 #     {{embed: ((abcdefghi))}}
 #   [[August 6th, 2020]]
 #     {{embed: ((bcdefghij))}}
-def format(title, uids_by_day)
+def format(title, uids_by_day, embed)
   return nil if uids_by_day.nil?
+  maybe_embed = ->(s) {
+    embed ?
+      "{{embed: ((#{s}))}}" :
+      "((#{s}))"
+  }
   formatted_pages = uids_by_day.map {|day, uids|
-    formatted_uids = uids.map {|uid| "    {{embed: ((#{uid}))}}"}.join("\n")
+    formatted_uids = uids.map {|uid| "    #{maybe_embed.call(uid)}"}.join("\n")
     formatted_day = "  [[#{day}]]"
     "#{formatted_day}\n#{formatted_uids}"
   }.join("\n")
@@ -175,7 +180,9 @@ end
 
 # Return a configuration based on the command line arguments.
 def parse_arguments!(argv)
-  results = {}
+  results = {
+    embed: false
+  }
 
   option_parser = OptionParser.new do |opts|
     opts.on("-h", "--help", "Prints this help") do
@@ -196,6 +203,14 @@ def parse_arguments!(argv)
 
     opts.on("-a", "--include-all", "Include all the matching results, not just the first") do |a|
       results[:include_all] = true
+    end
+
+    opts.on("-e", "--embed", "Place resulting block refs in an embed") do |a|
+      results[:embed] = true
+    end
+
+    opts.on("-E", "--no-embed", "Do not place resulting block refs in an embed (default)") do |a|
+      results[:embed] = false
     end
   end
 
@@ -220,7 +235,7 @@ if __FILE__ == $0
   results_by_month = process(pattern: options[:pattern], include_all: options[:include_all], pages: pages)
   relevant_results = filter_months(options[:month], results_by_month)
   formatted = relevant_results.map {|month, results|
-    format(options[:pattern], results)
+    format(options[:pattern], results, options[:embed])
   }.join("\n\n")
   puts formatted
 end
