@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+
+require 'pry'
+require 'date'
+require 'json'
+require 'stringio'
+
+require_relative 'roam_date'
+require_relative 'roam_month'
+
+def build_year_page(year)
+  months = (1..12).map {|m|
+    d = Date.new(year, m)
+    d.strftime("[%b %y]([[%B, %Y]])")
+  }
+
+  {
+    "title" => year.to_s,
+    "children" => [
+      {
+        "string" => months.join(" | ")
+      }
+    ],
+  }
+end
+
+def build_month_page(year, month)
+  first = Date.new(year, month)
+  {
+    "title" => first.strftime("%B, %Y"),
+    "children" => [
+      RoamCalendar.roam_calendar(RoamCalendar.month_range_containing_date(first))
+    ]
+  }
+end
+
+def build_month_pages(year)
+  (1..12).map {|month|
+    build_month_page(year, month)
+  }
+end
+
+def build_week_page(year, week)
+  date = Date.ordinal(year, 7*(week-1)+1)
+  sunday = RoamDate.sunday_on_or_before_date(date)
+  saturday = RoamDate.saturday_on_or_after_date(date)
+
+  children = (sunday..saturday).map {|date|
+    link_text = date.strftime("%a %-d")
+    "[#{link_text}]([[#{RoamDate.roam_date(date)}]])"
+  }
+
+  {
+    "title" => "Week #{week}, #{Date.new(year, 1).year}",
+    "children" => [
+      {
+        "string" => children.join(" | ")
+      }
+    ]
+  }
+end
+
+def build_week_pages(year)
+  (1..53).map {|week|
+    build_week_page(year, week)
+  }
+end
+
+def build_pages(year)
+  year_page = build_year_page(year)
+  month_pages = build_month_pages(year)
+  week_pages = build_week_pages(year)
+
+  [year_page] + month_pages + week_pages
+end
+
+def doit(year)
+  JSON.generate(build_pages(year.to_i))
+end
+
+if __FILE__ == $0
+  puts doit(ARGV[0])
+end
