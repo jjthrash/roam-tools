@@ -2,87 +2,30 @@
 
 require 'set'
 require 'date'
+require_relative 'roam_month'
 
-def sunday_on_or_before_date(date)
-  date.sunday? ?
-    date :
-    sunday_on_or_before_date(date-1)
-end
 
-def saturday_on_or_after_date(date)
-  date.saturday? ?
-    date :
-    saturday_on_or_after_date(date+1)
-end
-
-def nil_pad_dates_by_weeks(dates)
-  dates = dates.sort
-  first = sunday_on_or_before_date(dates.first)
-  last = saturday_on_or_after_date(dates.last)
-  date_set = Set.new(dates)
-  (first..last).map {|date|
-    date_set.include?(date) ? date : nil
-  }
-end
-
-# Lifted from: https://stackoverflow.com/questions/37364637/trying-to-convert-and-display-an-ordinal-number#37364719
-def ordinal_part(n)
-  last_number = n % 10
-  if [11,12,13].include?(n)
-    return "th"
-  elsif last_number == 1
-    return "st"
-  elsif last_number == 2
-    return "nd"
-  elsif last_number == 3
-    return "rd"
-  else
-    return "th"
+def to_markdown(node, depth=0)
+  result = []
+  result << "  "*depth + "- " + node["string"]
+  node["children"].each do |child|
+    result.push(*to_markdown(child, depth+1))
   end
-end
-
-def ordinal(n)
-  "#{n}#{ordinal_part(n)}"
-end
-
-def roam_date(date)
-  return "" if date.nil?
-
-  "[#{date.mday}]([[#{Date::MONTHNAMES[date.month]} #{ordinal(date.mday)}, #{date.year}]])"
-end
-
-def roam_calendar(dates)
-  dates = nil_pad_dates_by_weeks(dates)
-  weeks = dates.each_slice(7)
-  puts "- {{table}}"
-  (0..6).each do |i|
-    puts "  "*(i+1) + "- **#{Date::ABBR_DAYNAMES[i]}**"
-  end
-
-  weeks.each do |week|
-    week.each_with_index do |date, index|
-      puts "  "*(index+1) + "- " + roam_date(date)
-    end
-  end
-end
-
-def month_range_containing_date(date)
-  first = Date.new(date.year, date.month, 1)
-  last = first.next_month - 1
-  (first..last)
+  result
 end
 
 # TODO: proper args, allow specifying a range, month containing date, etc
 def dates_from_args(args)
   if args.count == 0
-    month_range_containing_date(Date.today)
+    RoamCalendar.month_range_containing_date(Date.today)
   elsif args.count == 1
-    month_range_containing_date(Date.parse(args[0]))
+    RoamCalendar.month_range_containing_date(Date.parse(args[0]))
   else
     args.map {|arg| Date.parse(arg)}
   end
 end
 
 if __FILE__ == $0
-  roam_calendar(dates_from_args(ARGV))
+  node = RoamCalendar.roam_calendar(dates_from_args(ARGV))
+  puts to_markdown(node).join("\n")
 end
