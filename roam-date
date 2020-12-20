@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+require 'date'
+require_relative 'roam_date'
+
+def date_from_args(args)
+  if args.count == 0
+    Date.today
+  else
+    Date.parse(args[0])
+  end
+end
+
+if __FILE__ == $0
+  puts RoamDate.roam_date(date_from_args(ARGV))
+end
