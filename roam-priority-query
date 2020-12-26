@@ -18,11 +18,11 @@ def roam_priority_query(date)
   # things due in days 2-6
   puts <<-QUERY
 - Things due today
-  - #{query_for_dates([Date.today])}
+  - #{query_for_dates([date])}
 - Things due tomorrow
-  - #{query_for_dates([Date.today+1])}
+  - #{query_for_dates([date])}
 - Things due the rest of the week
-  - #{query_for_dates((2..6).map {|i| Date.today + i})}
+  - #{query_for_dates((2..6).map {|i| date + i})}
   QUERY
 end
 
