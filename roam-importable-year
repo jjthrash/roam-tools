@@ -8,6 +8,10 @@ require_relative 'roam_date'
 require_relative 'roam_month'
 
 def build_year_page(year)
+  quarters = (1..4).map {|quarter|
+    "[Q#{quarter}]([[Q#{quarter}, #{year}]])"
+  }
+
   months = (1..12).map {|m|
     d = Date.new(year, m)
     d.strftime("[%b %y]([[%B, %Y]])")
@@ -16,6 +20,9 @@ def build_year_page(year)
   {
     "title" => year.to_s,
     "children" => [
+      {
+        "string" => quarters.join(" | ")
+      },
       {
         "string" => months.join(" | ")
       }
