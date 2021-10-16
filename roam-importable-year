@@ -30,6 +30,15 @@ def build_year_page(year)
   }
 end
 
+def weeks_by_date(year)
+  @weeks_by_date ||=
+    (1..53).each_with_object({}) do |week, h|
+      days_in_week(year, week).each do |weekday|
+        h[weekday] = week
+      end
+    end
+end
+
 def days_in_week(year, week)
   date = Date.ordinal(year, 7*(week-1)+1)
   sunday = RoamDate.sunday_on_or_before_date(date)
@@ -38,11 +47,25 @@ def days_in_week(year, week)
 end
 
 def build_month_page(year, month)
+  first_day = Date.new(year, month, 1)
+  last_day = first_day.next_month - 1
+  weeks =
+    (first_day..last_day).
+    map {|date|
+      weeks_by_date(year)[date]
+    }.
+    uniq.sort.
+    map {|week|
+      "[Week #{week}]([[Week #{week}, #{year}]])"
+    }
   first = Date.new(year, month)
   {
     "title" => first.strftime("%B, %Y"),
     "children" => [
-      RoamCalendar.roam_calendar(RoamCalendar.month_range_containing_date(first))
+      RoamCalendar.roam_calendar(RoamCalendar.month_range_containing_date(first)),
+      {
+        "string" => weeks.join(" | ")
+      }
     ]
   }
 end
