@@ -30,6 +30,13 @@ def build_year_page(year)
   }
 end
 
+def days_in_week(year, week)
+  date = Date.ordinal(year, 7*(week-1)+1)
+  sunday = RoamDate.sunday_on_or_before_date(date)
+  saturday = RoamDate.saturday_on_or_after_date(date)
+  (sunday..saturday)
+end
+
 def build_month_page(year, month)
   first = Date.new(year, month)
   {
@@ -69,11 +76,7 @@ def build_quarter_pages(year)
 end
 
 def build_week_page(year, week)
-  date = Date.ordinal(year, 7*(week-1)+1)
-  sunday = RoamDate.sunday_on_or_before_date(date)
-  saturday = RoamDate.saturday_on_or_after_date(date)
-
-  children = (sunday..saturday).map {|date|
+  children = days_in_week(year, week).map {|date|
     link_text = date.strftime("%a %-d")
     "[#{link_text}]([[#{RoamDate.roam_date(date)}]])"
   }
