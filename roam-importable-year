@@ -46,6 +46,28 @@ def build_month_pages(year)
   }
 end
 
+def build_quarter_page(year, quarter)
+  months =
+    (0..2).
+    map {|i| 1+(quarter-1)*3+i}.
+    map {|month| Date.new(year, month, 1)}.
+    map {|date| date.strftime("[%b %y]([[%B, %Y]])")}
+  {
+    "title" => "Q#{quarter}, #{year}",
+    "children" => [
+      {
+        "string" => months.join(" | ")
+      }
+    ]
+  }
+end
+
+def build_quarter_pages(year)
+  (1..4).map {|quarter|
+    build_quarter_page(year, quarter)
+  }
+end
+
 def build_week_page(year, week)
   date = Date.ordinal(year, 7*(week-1)+1)
   sunday = RoamDate.sunday_on_or_before_date(date)
@@ -75,9 +97,10 @@ end
 def build_pages(year)
   year_page = build_year_page(year)
   month_pages = build_month_pages(year)
+  quarter_pages = build_quarter_pages(year)
   week_pages = build_week_pages(year)
 
-  [year_page] + month_pages + week_pages
+  [year_page] + month_pages + quarter_pages + week_pages
 end
 
 def doit(year)
