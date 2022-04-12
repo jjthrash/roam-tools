@@ -35,7 +35,7 @@ E.g.
 
 ### Roam Importable Year
 
-Spit out an importable JSON file corresponding to a year. Built along the lines of the technique posted in this forum thread: [How I quickly navigate in time](https://forum.roamresearch.com/t/how-i-quickly-navigate-in-time/610/20).
+Spit out an importable JSON file corresponding to a year. Built along the lines of the technique posted in this forum thread: [How I quickly navigate in time](https://web.archive.org/web/20210228071506/https://forum.roamresearch.com/t/how-i-quickly-navigate-in-time/610).
 
 Includes:
 - A year page, e.g. `[[2021]]`
