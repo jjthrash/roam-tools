@@ -7,12 +7,21 @@ require 'stringio'
 require_relative 'roam_date'
 require_relative 'roam_month'
 
-class WeekBuilder
+class SundayFirstWeekBuilder
   def days_in_week(year, week)
     date = Date.ordinal(year, 7*(week-1)+1)
     sunday = RoamDate.sunday_on_or_before_date(date)
     saturday = RoamDate.saturday_on_or_after_date(date)
     (sunday..saturday)
+  end
+end
+
+class MondayFirstWeekBuilder
+  def days_in_week(year, week)
+    date = Date.ordinal(year, 7*(week-1)+1)
+    monday = RoamDate.monday_on_or_before_date(date)
+    sunday = RoamDate.sunday_on_or_after_date(date)
+    (monday..sunday)
   end
 end
 
@@ -127,7 +136,7 @@ def build_week_pages(year, week_builder)
 end
 
 def build_pages(year)
-  week_builder = WeekBuilder.new
+  week_builder = SundayFirstWeekBuilder.new
   year_page = build_year_page(year)
   month_pages = build_month_pages(year, week_builder)
   quarter_pages = build_quarter_pages(year)

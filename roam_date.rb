@@ -38,6 +38,12 @@ module RoamDate
     end
   end
 
+  def monday_on_or_before_date(date)
+    date.monday? ?
+      date :
+      monday_on_or_before_date(date-1)
+  end
+
   def sunday_on_or_before_date(date)
     date.sunday? ?
       date :
@@ -48,6 +54,12 @@ module RoamDate
     date.saturday? ?
       date :
       saturday_on_or_after_date(date+1)
+  end
+
+  def sunday_on_or_after_date(date)
+    date.sunday? ?
+      date :
+      sunday_on_or_after_date(date+1)
   end
 
 end
