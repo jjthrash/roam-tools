@@ -7,6 +7,24 @@ require 'stringio'
 require_relative 'roam_date'
 require_relative 'roam_month'
 
+class SundayFirstWeekBuilder
+  def days_in_week(year, week)
+    date = Date.ordinal(year, 7*(week-1)+1)
+    sunday = RoamDate.sunday_on_or_before_date(date)
+    saturday = RoamDate.saturday_on_or_after_date(date)
+    (sunday..saturday)
+  end
+end
+
+class MondayFirstWeekBuilder
+  def days_in_week(year, week)
+    date = Date.ordinal(year, 7*(week-1)+1)
+    monday = RoamDate.monday_on_or_before_date(date)
+    sunday = RoamDate.sunday_on_or_after_date(date)
+    (monday..sunday)
+  end
+end
+
 def build_year_page(year)
   quarters = (1..4).map {|quarter|
     "[Q#{quarter}]([[Q#{quarter}, #{year}]])"
@@ -30,29 +48,26 @@ def build_year_page(year)
   }
 end
 
-def weeks_by_date(year)
+def weeks_by_date(year, week_builder)
   @weeks_by_date ||=
     (1..53).each_with_object({}) do |week, h|
-      days_in_week(year, week).each do |weekday|
+      days_in_week(year, week, week_builder).each do |weekday|
         h[weekday] = week
       end
     end
 end
 
-def days_in_week(year, week)
-  date = Date.ordinal(year, 7*(week-1)+1)
-  sunday = RoamDate.sunday_on_or_before_date(date)
-  saturday = RoamDate.saturday_on_or_after_date(date)
-  (sunday..saturday)
+def days_in_week(year, week, week_builder)
+  week_builder.days_in_week(year, week)
 end
 
-def build_month_page(year, month)
+def build_month_page(year, month, week_builder)
   first_day = Date.new(year, month, 1)
   last_day = first_day.next_month - 1
   weeks =
     (first_day..last_day).
     map {|date|
-      weeks_by_date(year)[date]
+      weeks_by_date(year, week_builder)[date]
     }.
     uniq.sort.
     map {|week|
@@ -70,9 +85,9 @@ def build_month_page(year, month)
   }
 end
 
-def build_month_pages(year)
+def build_month_pages(year, week_builder)
   (1..12).map {|month|
-    build_month_page(year, month)
+    build_month_page(year, month, week_builder)
   }
 end
 
@@ -98,8 +113,8 @@ def build_quarter_pages(year)
   }
 end
 
-def build_week_page(year, week)
-  children = days_in_week(year, week).map {|date|
+def build_week_page(year, week, week_builder)
+  children = days_in_week(year, week, week_builder).map {|date|
     link_text = date.strftime("%a %-d")
     "[#{link_text}]([[#{RoamDate.roam_date(date)}]])"
   }
@@ -114,25 +129,34 @@ def build_week_page(year, week)
   }
 end
 
-def build_week_pages(year)
+def build_week_pages(year, week_builder)
   (1..53).map {|week|
-    build_week_page(year, week)
+    build_week_page(year, week, week_builder)
   }
 end
 
-def build_pages(year)
+def build_pages(year, week_builder)
   year_page = build_year_page(year)
-  month_pages = build_month_pages(year)
+  month_pages = build_month_pages(year, week_builder)
   quarter_pages = build_quarter_pages(year)
-  week_pages = build_week_pages(year)
+  week_pages = build_week_pages(year, week_builder)
 
   [year_page] + month_pages + quarter_pages + week_pages
 end
 
-def doit(year)
-  JSON.generate(build_pages(year.to_i))
+def doit(year:, first_day_of_week: :sunday)
+  JSON.generate(build_pages(year.to_i, build_week_builder(first_day_of_week)))
+end
+
+def build_week_builder(first_day_of_week)
+  case first_day_of_week
+  when :monday
+    MondayFirstWeekBuilder.new
+  else
+    SundayFirstWeekBuilder.new
+  end
 end
 
 if __FILE__ == $0
-  puts doit(ARGV[0])
+  puts doit(year: ARGV[0], first_day_of_week: (ARGV[1] || 'sunday').to_sym)
 end
