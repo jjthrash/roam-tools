@@ -7,6 +7,15 @@ require 'stringio'
 require_relative 'roam_date'
 require_relative 'roam_month'
 
+class WeekBuilder
+  def days_in_week(year, week)
+    date = Date.ordinal(year, 7*(week-1)+1)
+    sunday = RoamDate.sunday_on_or_before_date(date)
+    saturday = RoamDate.saturday_on_or_after_date(date)
+    (sunday..saturday)
+  end
+end
+
 def build_year_page(year)
   quarters = (1..4).map {|quarter|
     "[Q#{quarter}]([[Q#{quarter}, #{year}]])"
@@ -40,10 +49,7 @@ def weeks_by_date(year)
 end
 
 def days_in_week(year, week)
-  date = Date.ordinal(year, 7*(week-1)+1)
-  sunday = RoamDate.sunday_on_or_before_date(date)
-  saturday = RoamDate.saturday_on_or_after_date(date)
-  (sunday..saturday)
+  WeekBuilder.new.days_in_week(year, week)
 end
 
 def build_month_page(year, month)
