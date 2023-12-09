@@ -135,8 +135,7 @@ def build_week_pages(year, week_builder)
   }
 end
 
-def build_pages(year)
-  week_builder = SundayFirstWeekBuilder.new
+def build_pages(year, week_builder)
   year_page = build_year_page(year)
   month_pages = build_month_pages(year, week_builder)
   quarter_pages = build_quarter_pages(year)
@@ -145,10 +144,19 @@ def build_pages(year)
   [year_page] + month_pages + quarter_pages + week_pages
 end
 
-def doit(year)
-  JSON.generate(build_pages(year.to_i))
+def doit(year:, first_day_of_week: :sunday)
+  JSON.generate(build_pages(year.to_i, build_week_builder(first_day_of_week)))
+end
+
+def build_week_builder(first_day_of_week)
+  case first_day_of_week
+  when :monday
+    MondayFirstWeekBuilder.new
+  else
+    SundayFirstWeekBuilder.new
+  end
 end
 
 if __FILE__ == $0
-  puts doit(ARGV[0])
+  puts doit(year: ARGV[0], first_day_of_week: (ARGV[1] || 'sunday').to_sym)
 end
