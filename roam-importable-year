@@ -9,7 +9,7 @@ require_relative 'roam_month'
 
 class SundayFirstWeekBuilder
   def days_in_week(year, week)
-    date = Date.ordinal(year, 7*(week-1)+1)
+    date = Date.ordinal(year) + 7*(week-1)
     sunday = RoamDate.sunday_on_or_before_date(date)
     saturday = RoamDate.saturday_on_or_after_date(date)
     (sunday..saturday)
@@ -18,7 +18,7 @@ end
 
 class MondayFirstWeekBuilder
   def days_in_week(year, week)
-    date = Date.ordinal(year, 7*(week-1)+1)
+    date = Date.ordinal(year) + 7*(week-1)
     monday = RoamDate.monday_on_or_before_date(date)
     sunday = RoamDate.sunday_on_or_after_date(date)
     (monday..sunday)
@@ -50,8 +50,11 @@ end
 
 def weeks_by_date(year, week_builder)
   @weeks_by_date ||=
-    (1..53).each_with_object({}) do |week, h|
-      days_in_week(year, week, week_builder).each do |weekday|
+    (1..54).each_with_object({}) do |week, h|
+      days = days_in_week(year, week, week_builder)
+      next unless days.first.year == year || days.last.year == year
+
+      days.each do |weekday|
         h[weekday] = week
       end
     end
@@ -129,8 +132,12 @@ def build_week_page(year, week, week_builder)
   }
 end
 
+def weeks_in_year(year, week_builder)
+  weeks_by_date(year, week_builder).values.max
+end
+
 def build_week_pages(year, week_builder)
-  (1..53).map {|week|
+  (1..weeks_in_year(year, week_builder)).map {|week|
     build_week_page(year, week, week_builder)
   }
 end
